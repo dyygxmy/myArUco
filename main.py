@@ -56,8 +56,8 @@ def main(name):
     # OpenCV 函数findHomography计算源点和目标点之间的单应函数h 。然后使用单应矩阵来扭曲新图像以适合目标帧。
     # 扭曲的图像被屏蔽并复制到目标帧中。在视频的情况下，这个过程在每一帧上重复。
 
-    im_back = cv.imread("back.png")
-    im_base=cv.imread("base.png")
+    im_back = cv.imread("fotomix/back.png")
+    im_base=cv.imread("fotomix/base.png")
     pts_base=np.array([[0,0],[840,0],[840,560],[0,560]])
     pts_new=np.array([[419,150],[775,115],[782,520],[410,509]])
     # im_dstDraw = cv.polylines(im_src, [np.int32(pts_dst)],True,[255,0,0],thickness=4,lineType=cv.LINE_AA)
@@ -68,7 +68,7 @@ def main(name):
     cv.polylines(im_back, [np.int32(pts_new)], True, [0,0,255], 3, cv.LINE_AA) #红色画线，线粗3
     # cv.imshow("im_dstDraw", im_dstDraw)
     # cv.imshow("im_back", im_back)
-    cv.imwrite("im_dstDraw.png",im_back)
+    cv.imwrite("fotomix/im_dstDraw.png", im_back)
 
     # 计算单应性矩阵 这个是重点
     # h1, status = cv.findHomography(pts_src, pts_dst) # pts_src矩阵映射成pts_dst矩阵
@@ -84,36 +84,36 @@ def main(name):
 
     # 将原图像变形后放到黑色背景图像(大小按im_back)上
     warped_image = cv.warpPerspective(im_base, h, (im_back.shape[1], im_back.shape[0]))
-    cv.imwrite("warped_image.png",warped_image)
+    cv.imwrite("fotomix/warped_image.png", warped_image)
 
     # 准备一个与im_back一样大小表示区域的蒙版mask
     mask = np.zeros([im_back.shape[0], im_back.shape[1]], dtype=np.uint8)
-    cv.imwrite("mask.png",mask)
+    cv.imwrite("fotomix/mask.png", mask)
     # 按扭曲的图像区域填充白色到mask上(直接对mask生效，返回值也是生效后的mask)
     cv.fillConvexPoly(mask, np.int32([pts_new]), (255, 255, 255), cv.LINE_AA)
-    cv.imwrite("fill.png",mask)
+    cv.imwrite("fotomix/fill.png", mask)
 
     # 把mask填充白色的区域再抹掉一圈，避免从扭曲中复制边界效果
     element = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
     mask = cv.erode(mask, element, iterations=3)
-    cv.imwrite("mask2.png", mask)
+    cv.imwrite("fotomix/mask2.png", mask)
 
     # 将蒙版复制到3个通道
     warped_image = warped_image.astype(float)
     mask3 = np.zeros_like(warped_image)
     for i in range(0, 3):
         mask3[:, :, i] = mask / 255
-    cv.imwrite("mask3.png", mask3)
+    cv.imwrite("fotomix/mask3.png", mask3)
 
     #将蒙版扭曲图像复制到蒙版区域的原始帧中(其他地方填充黑色)
     warped_image_masked = cv.multiply(warped_image, mask3)
-    cv.imwrite("warped_image_masked.png",warped_image_masked)
+    cv.imwrite("fotomix/warped_image_masked.png", warped_image_masked)
     #将原背景图对应mask黑色部分(其他地方填充黑色)
     frame_masked = cv.multiply(im_back.astype(float), 1 - mask3)
-    cv.imwrite("frame_masked.png",frame_masked)
+    cv.imwrite("fotomix/frame_masked.png", frame_masked)
     #将两个图去掉黑色的部分，合在一起
     im_out = cv.add(warped_image_masked, frame_masked)
-    cv.imwrite("im_out.png",im_out)
+    cv.imwrite("fotomix/im_out.png", im_out)
     # cv.imshow("im_out",im_out)
 
 
