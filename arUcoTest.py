@@ -6,7 +6,7 @@ import math
 #加载鱼眼镜头的yaml标定文件，检测aruco并且估算与标签之间的距离,获取偏航，俯仰，滚动
 
 #加载相机纠正参数
-cv_file = cv2.FileStorage("yuyan.yaml", cv2.FILE_STORAGE_READ)
+cv_file = cv2.FileStorage("config/yuyan.yaml", cv2.FILE_STORAGE_READ)
 camera_matrix = cv_file.getNode("camera_matrix").mat()
 dist_matrix = cv_file.getNode("dist_coeff").mat()
 cv_file.release()
@@ -137,5 +137,5 @@ while True:
     if key == ord(' '):   # 按空格键保存
 #        num = num + 1
 #        filename = "frames_%s.jpg" % num  # 保存一张图像
-        filename = str(time.time())[:10] + ".jpg"
+        filename = "data/" + str(time.time())[:10] + ".jpg"
         cv2.imwrite(filename, frame)
