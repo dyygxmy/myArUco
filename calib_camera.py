@@ -3,7 +3,8 @@
 import numpy as np
 import cv2
 import os
-import yaml
+from ruamel import yaml
+import json
 
 def generate_chessboard(cube_cm=2., pattern_size=(8, 6), scale=37.79527559055118):
     """
@@ -126,15 +127,41 @@ def calib_camera(calib_dir, pattern_size=(8, 6), draw_points=False):
     print("dist_coeffs",dist_coeffs) #[[-5.70066409e-01  6.47653659e+00  1.03422776e-02  1.53270067e-02 -2.95469369e+01]]
     # print("rvecs",rvecs)#里面有6个array([[-0.63525905],[ 0.08726233],[ 0.05195479]])这样值的数组
     # print("tvecs",tvecs)#里面有6个array([[-2.5654594 ],[ 0.89226089],[29.50347634]])这样值的数组
-    save_config("config/camera_dell.yaml","camera_matrix","3","3","d",k_cam)
-    # save_config("config/camera_dell.yaml", "dist_coeff", "3", "3", "d", dist_coeffs)
+    save_config("config/camera_dell.yaml","camera_matrix",3,3,"d",k_cam)
+    # print("type:",type(k_cam)) # <class 'numpy.ndarray'>
+    # list = []
+    # print("type:",type(list)) # <class 'list'>
+    save_config("config/camera_dell.yaml", "dist_coeff", 3, 3, "d", dist_coeffs)
     # return k_cam, dist_coeffs
+text=[]
+def ndarry_split(ndarry):
+    global text
+    print("len:",len(ndarry),ndarry)
+    if type(ndarry)=="numpy.ndarray":
+        if len(ndarry) > 1:
+            for item in ndarry:
+                return ndarry_split(item)
+    else:
+        text.append(ndarry.tolist())
+
+    return text
 
 def save_config(path,key,rows,cols,dt,data):
-    ject={key:{"rows":rows,"cols":cols,"dt":dt,"data":data}}
-    file=open(path,'w+')
-    file.write(yaml.dump(ject))
-    file.close()
+    print("oldndarray",data)
+    text.clear()
+    print("newndarry",ndarry_split(data))
+    object={key:{"rows":rows,"cols":cols,"dt":dt,"data":text}}
+    # ject = yaml.load(data, Loader=yaml.RoundTripLoader)
+    write_type=None
+    if key=="camera_matrix":
+        write_type = 'w'
+    elif key=="dist_coeff":
+        write_type='a'
+    with open(path,write_type, encoding="utf-8") as file:
+        if key == "camera_matrix":
+            file.write("%YAML:1.0\n---")
+        yaml.dump(object,file, Dumper=yaml.RoundTripDumper)
+        file.close()
 
 if __name__ == '__main__':
     # generate_chessboard() # 棋盘生成

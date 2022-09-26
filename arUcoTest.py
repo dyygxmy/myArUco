@@ -5,13 +5,17 @@ import cv2.aruco as aruco
 import math
 
 # 加载鱼眼镜头的yaml标定文件，检测aruco并且估算与标签之间的距离,获取偏航，俯仰，滚动
-
 # 加载相机纠正参数
 cv_file = cv2.FileStorage("config/yuyan.yaml", cv2.FILE_STORAGE_READ)
+# camera_matrix = cv_file.getNode("camera_matrix").mat()
+# dist_matrix = cv_file.getNode("dist_coeff").mat()
+# cv_file.release()
+
+# 测试自己标定的数据
+# cv_file = cv2.FileStorage("config/camera_dell.yaml", cv2.FILE_STORAGE_READ)
 camera_matrix = cv_file.getNode("camera_matrix").mat()
 dist_matrix = cv_file.getNode("dist_coeff").mat()
 cv_file.release()
-
 # 默认cam参数
 # dist=np.array(([[-0.58650416 , 0.59103816, -0.00443272 , 0.00357844 ,-0.27203275]]))
 # newcameramtx=np.array([[189.076828   ,  0.    ,     361.20126638]
@@ -38,7 +42,8 @@ while True:
     # cv2.imshow("cap",frame) #未处理的原始照片 宽640 高480
 
     # 测试用其他图片的纠正过程
-    # frame = cv2.imread("pic/baf18385c114e62b1adee68411db79a.jpg")
+    frame = cv2.imread("pic/baf18385c114e62b1adee68411db79a.jpg")
+    # frame=cv2.imread("config/1664176216.jpg")
 
     # 图像去畸变之前，我们还可以使用cv.getOptimalNewCameraMatrix()优化内参数和畸变系数，通过设定自由自由比例因子alpha。
     # 当alpha设为0的时候，将会返回一个剪裁过的将去畸变后不想要的像素去掉的内参数和畸变系数；
