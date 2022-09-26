@@ -31,17 +31,40 @@ font = cv2.FONT_HERSHEY_SIMPLEX  # font for displaying text (below)
 
 # num = 0
 while True:
-    ret, frame = cap.read()
-    h1, w1 = frame.shape[:2]
-    # 读取摄像头画面
-    # 纠正畸变
-    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist_matrix, (h1, w1), 0, (h1, w1))
-    dst1 = cv2.undistort(frame, camera_matrix, dist_matrix, None, newcameramtx)
-    x, y, w1, h1 = roi
-    dst1 = dst1[y:y + h1, x:x + w1]
-    frame = dst1
+    ret, frame = cap.read()# 读取摄像头画面
+    h1, w1 = frame.shape[:2] #取shape属性中的垂直像素和水平像素
+    # print("h",h1,"w",w1) #h 480 w 640
+    # print("ret",ret) #True
+    # cv2.imshow("cap",frame) #未处理的原始照片 宽640 高480
 
-    frame = cv2.imread("pic/baf18385c114e62b1adee68411db79a.jpg")
+    # 测试用其他图片的纠正过程
+    # frame = cv2.imread("pic/baf18385c114e62b1adee68411db79a.jpg")
+
+    # 图像去畸变之前，我们还可以使用cv.getOptimalNewCameraMatrix()优化内参数和畸变系数，通过设定自由自由比例因子alpha。
+    # 当alpha设为0的时候，将会返回一个剪裁过的将去畸变后不想要的像素去掉的内参数和畸变系数；
+    # 当alpha设为1的时候，将会返回一个包含额外黑色像素点的内参数和畸变系数，并返回一个ROI用于将其剪裁掉。
+    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist_matrix, (h1, w1), 0, (h1, w1))
+    # getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, alpha, newImgSize=None, centerPrincipalPoint=None)
+    # alpha=0，视场会放大，alpha=1，视场不变
+    # newcameramtx和roi的值与原片没关系，用不同的原片这两值都是固定的，主要还是看camera_matrix和dist_matrix
+    # print("newcameramtx",newcameramtx) #[[146.4493103    0.         312.71574961]
+                                     # [  0.         147.02703857 250.20591536]
+                                     # [  0.           0.           1.        ]]
+    # print("roi",roi) #(0, 0, 479, 639)
+    #进行roi的crop会裁掉一部分像素
+    #undistort()功能是对图像去畸变
+    dst1 = cv2.undistort(frame, camera_matrix, dist_matrix, None, newcameramtx)
+    #undistort(src, cameraMatrix, distCoeffs, dst=None, newCameraMatrix=None)
+    # cv2.imwrite("pic/dst1.png",dst1) # 此时还是640*480
+    x, y, w1, h1 = roi
+    dst1 = dst1[y:y + h1, x:x + w1] # 截取垂直0~639，水平0~479像素的图像
+    # cv2.imwrite("pic/dst2.png", dst1) # 变成479*480
+    frame = dst1
+    cv2.imshow("dst",frame) #此时纠正过的画面大小改为宽479 高480 ，周边像魔镜一样
+
+    # 测试直接用照片来识别
+    # frame = cv2.imread("pic/baf18385c114e62b1adee68411db79a.jpg")
+
     # 灰度化，检测aruco标签，所用字典为6×6——250
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
@@ -50,7 +73,7 @@ while True:
     # 使用aruco.detectMarkers()函数可以检测到marker，返回ID和标志板的4个角点坐标
     corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
     '''testimg=frame.copy()
-    print("corners",corners) # 四个角的坐标
+    print("corners",corners) # 整个二维码四个角的坐标
     print("ids", ids) # 二维码的结果
     print("rejectedImgPoints", rejectedImgPoints) #所有检测出来的区域的四角坐标的数组
     # cv2.imshow("gray",gray)
@@ -60,7 +83,7 @@ while True:
     # cv2.imshow("rejectedImgPoints",testimg)
     cv2.imwrite("pic/testting.png",testimg)'''
 
-    if ids is not None: #ids有值
+    if ids is not None:  # ids有值
         # 获取aruco返回的rvec旋转矩阵、tvec位移矩阵
         rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, camera_matrix, dist_matrix)
         # 估计每个标记的姿态并返回值rvet和tvec ---不同
@@ -121,14 +144,14 @@ while True:
         # r_matrix = -np.linalg.inv(r_matrix)  # 相机旋转矩阵
         # c_matrix = np.dot(r_matrix, tvec)  # 相机位置矩阵
 
-    else:# 如果找不到id
+    else:  # 如果找不到id
         ##### DRAW "NO IDS" #####
         cv2.putText(frame, "No Ids", (0, 64), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
     # 显示结果画面
-    # cv2.imshow("endframe", frame)
+    cv2.imshow("endframe", frame)
 
-    key = cv2.waitKey(1000)
+    key = cv2.waitKey(5000)
 
     if key == 27:  # 按esc键退出
         print('esc break...')
