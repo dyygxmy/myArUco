@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import os
 from ruamel import yaml
-import json
+
 
 def generate_chessboard(cube_cm=2., pattern_size=(8, 6), scale=37.79527559055118):
     """
@@ -131,26 +131,15 @@ def calib_camera(calib_dir, pattern_size=(8, 6), draw_points=False):
     # print("type:",type(k_cam)) # <class 'numpy.ndarray'>
     # list = []
     # print("type:",type(list)) # <class 'list'>
-    save_config("config/camera_dell.yaml", "dist_coeff", 3, 3, "d", dist_coeffs)
+    save_config("config/camera_dell.yaml", "dist_coeff", 1, 5, "d", dist_coeffs)
     # return k_cam, dist_coeffs
-text=[]
-def ndarry_split(ndarry):
-    global text
-    print("len:",len(ndarry),ndarry)
-    if type(ndarry)=="numpy.ndarray":
-        if len(ndarry) > 1:
-            for item in ndarry:
-                return ndarry_split(item)
-    else:
-        text.append(ndarry.tolist())
-
-    return text
 
 def save_config(path,key,rows,cols,dt,data):
-    print("oldndarray",data)
-    text.clear()
-    print("newndarry",ndarry_split(data))
-    object={key:{"rows":rows,"cols":cols,"dt":dt,"data":text}}
+    print("olddata",data)
+    text=[]
+    text=np.concatenate(data).tolist() # 拆成一维数组再转换成列表
+    print("newdata",text)
+    object={key:{"rows":rows,"cols":cols,"dt":dt,"data":str(text)}}
     # ject = yaml.load(data, Loader=yaml.RoundTripLoader)
     write_type=None
     if key=="camera_matrix":
@@ -159,7 +148,7 @@ def save_config(path,key,rows,cols,dt,data):
         write_type='a'
     with open(path,write_type, encoding="utf-8") as file:
         if key == "camera_matrix":
-            file.write("%YAML:1.0\n---")
+            file.write("%YAML:1.0\n---\n")
         yaml.dump(object,file, Dumper=yaml.RoundTripDumper)
         file.close()
 

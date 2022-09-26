@@ -3,19 +3,45 @@ import time
 import cv2
 import cv2.aruco as aruco
 import math
+from ruamel import yaml
 
 # 加载鱼眼镜头的yaml标定文件，检测aruco并且估算与标签之间的距离,获取偏航，俯仰，滚动
 # 加载相机纠正参数
-cv_file = cv2.FileStorage("config/yuyan.yaml", cv2.FILE_STORAGE_READ)
+# cv_file = cv2.FileStorage("config/yuyan.yaml", cv2.FILE_STORAGE_READ)
 # camera_matrix = cv_file.getNode("camera_matrix").mat()
 # dist_matrix = cv_file.getNode("dist_coeff").mat()
+# print("type",type(camera_matrix),type(dist_matrix)) # type <class 'numpy.ndarray'> <class 'numpy.ndarray'>
 # cv_file.release()
 
 # 测试自己标定的数据
-# cv_file = cv2.FileStorage("config/camera_dell.yaml", cv2.FILE_STORAGE_READ)
+cv_file = cv2.FileStorage("config/camera_dell.yaml", cv2.FILE_STORAGE_READ)
 camera_matrix = cv_file.getNode("camera_matrix").mat()
 dist_matrix = cv_file.getNode("dist_coeff").mat()
+print("type1",type(camera_matrix),type(dist_matrix))
+print("camera_matrix",camera_matrix)
+print("dist_matrix",dist_matrix)
+# type1 <class 'numpy.ndarray'> <class 'numpy.ndarray'>
+# camera_matrix [[616.52996432   0.         349.19025283]
+#  [  0.         607.8280132  242.16897061]
+#  [  0.           0.           1.        ]]
+# dist_matrix [[-5.70066409e-01  6.47653659e+00  1.03422776e-02  1.53270067e-02
+#   -2.95469369e+01]]
 cv_file.release()
+
+# with open("config/camera_dell.yaml", "r") as file:
+#     parameter = yaml.load(file.read(), Loader=yaml.Loader)
+#     mtx = parameter['camera_matrix']
+#     dist = parameter['dist_coeff']
+#     camera_matrix = np.array(mtx)
+#     dist_matrix = np.array(dist)
+#     print("type2",type(camera_matrix),type(dist_matrix))
+#     print("camera_matrix",camera_matrix)
+#     print("dist_matrix",dist_matrix)
+# type2 <class 'numpy.ndarray'> <class 'numpy.ndarray'>
+# camera_matrix {'rows': 3, 'cols': 3, 'dt': 'd', 'data': [616.5299643234498, 0.0, 349.19025283346315, 0.0, 607.8280131983712, 242.16897060648043, 0.0, 0.0, 1.0]}
+# dist_matrix {'rows': 1, 'cols': 5, 'dt': 'd', 'data': [-0.5700664090180133, 6.47653658931818, 0.010342277580532295, 0.015327006665322114, -29.546936896025798]}
+
+
 # 默认cam参数
 # dist=np.array(([[-0.58650416 , 0.59103816, -0.00443272 , 0.00357844 ,-0.27203275]]))
 # newcameramtx=np.array([[189.076828   ,  0.    ,     361.20126638]
@@ -35,8 +61,8 @@ font = cv2.FONT_HERSHEY_SIMPLEX  # font for displaying text (below)
 
 # num = 0
 while True:
-    ret, frame = cap.read()# 读取摄像头画面
-    h1, w1 = frame.shape[:2] #取shape属性中的垂直像素和水平像素
+    ret, frame = cap.read()  # 读取摄像头画面
+    h1, w1 = frame.shape[:2]  # 取shape属性中的垂直像素和水平像素
     # print("h",h1,"w",w1) #h 480 w 640
     # print("ret",ret) #True
     # cv2.imshow("cap",frame) #未处理的原始照片 宽640 高480
@@ -53,19 +79,19 @@ while True:
     # alpha=0，视场会放大，alpha=1，视场不变
     # newcameramtx和roi的值与原片没关系，用不同的原片这两值都是固定的，主要还是看camera_matrix和dist_matrix
     # print("newcameramtx",newcameramtx) #[[146.4493103    0.         312.71574961]
-                                     # [  0.         147.02703857 250.20591536]
-                                     # [  0.           0.           1.        ]]
+    # [  0.         147.02703857 250.20591536]
+    # [  0.           0.           1.        ]]
     # print("roi",roi) #(0, 0, 479, 639)
-    #进行roi的crop会裁掉一部分像素
-    #undistort()功能是对图像去畸变
+    # 进行roi的crop会裁掉一部分像素
+    # undistort()功能是对图像去畸变
     dst1 = cv2.undistort(frame, camera_matrix, dist_matrix, None, newcameramtx)
-    #undistort(src, cameraMatrix, distCoeffs, dst=None, newCameraMatrix=None)
+    # undistort(src, cameraMatrix, distCoeffs, dst=None, newCameraMatrix=None)
     # cv2.imwrite("pic/dst1.png",dst1) # 此时还是640*480
     x, y, w1, h1 = roi
-    dst1 = dst1[y:y + h1, x:x + w1] # 截取垂直0~639，水平0~479像素的图像
+    dst1 = dst1[y:y + h1, x:x + w1]  # 截取垂直0~639，水平0~479像素的图像
     # cv2.imwrite("pic/dst2.png", dst1) # 变成479*480
     frame = dst1
-    cv2.imshow("dst",frame) #此时纠正过的画面大小改为宽479 高480 ，周边像魔镜一样
+    cv2.imshow("dst", frame)  # 此时纠正过的画面大小改为宽479 高480 ，周边像魔镜一样
 
     # 测试直接用照片来识别
     # frame = cv2.imread("pic/baf18385c114e62b1adee68411db79a.jpg")
