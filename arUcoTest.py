@@ -1,8 +1,14 @@
+"""
+根据标定的相机参数来识别标签
+在标签上画3D角，边框
+显示摄像头视角479*480的窗口
+窗口上显示中心点的坐标，id，距离，偏角
+"""
+
 import numpy as np
 import time
 import cv2
 import cv2.aruco as aruco
-import math
 from ruamel import yaml
 import json
 import math
@@ -181,7 +187,7 @@ while True:
         # 用来标定计算系数，不同的相机数据不一样
         # base=(30*scale)/tvec[0][0][2]
         # print("30cm-base",base) # 300像素在30cm处计算是27000，50像素就是4500
-        base = 4500 # 50像素图案的系数
+        base = 4500 # 50像素图案的系数 标定时像素越大tvec[0][0][2]越小，则base就会越大
 
         # 距离估计
         distance = tvec[0][0][2] * base/scale   # 单位是厘米
