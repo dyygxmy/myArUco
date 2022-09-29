@@ -53,10 +53,10 @@ def generate_chessboard(cube_cm=2., pattern_size=(9, 7), scale=37.79527559055118
     win_name = "chessboard"
     cv2.imshow(win_name, chessboard)
     cv2.imwrite("pic/"+win_name+".jpg",chessboard)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-def calib_camera(calib_dir, pattern_size=(8, 6), draw_points=False):
+def calib_camera(calib_dir="masterImg/", pattern_size=(8, 6), draw_points=False):
     """
     相机标定
     calib_dir: str 标定原图路径
@@ -154,7 +154,9 @@ def calib_camera(calib_dir, pattern_size=(8, 6), draw_points=False):
     #     mean_error += error*error
     # print("errorValue",mean_error/len(object_points))
 
-    # return k_cam, dist_coeffs
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+
 
 def save_config(path,key,data):
     # print("olddata",data)
@@ -174,8 +176,6 @@ def save_config(path,key,data):
         yaml.dump(object,file, Dumper=yaml.RoundTripDumper)
         file.close()
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # generate_chessboard() # 棋盘生成
-    calib_camera('masterImg/',(8,6),True) # 棋盘标定
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    # calib_camera('masterImg/',(8,6),True) # 棋盘标定
