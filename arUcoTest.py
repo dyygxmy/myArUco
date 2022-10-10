@@ -15,6 +15,7 @@ import math
 
 
 def identify_tag(distance_init):
+    timeout=60
     base = 4500  # 50像素图案的系数 标定时像素越大tvec[0][0][2]越小，则base就会越大
     scale = 37.79527559055118
     # cube_pixel = cube_cm * scale (像素=厘米*系数)
@@ -242,7 +243,7 @@ def identify_tag(distance_init):
         # 显示结果画面
         cv2.imshow("endframe", frame)
 
-        key = cv2.waitKey(1)
+        key = cv2.waitKey(timeout)
 
         if key == 27:  # 按esc键退出
             print('esc break...')
