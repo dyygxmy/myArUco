@@ -6,13 +6,16 @@ Created on 2017-10-26
 @author: 
 '''
 from ctypes import *
-
+import os
+add_path = os.path.split(os.path.abspath(__file__))[0]+'\\'
+os.add_dll_directory(add_path) #添加dll搜索路径
+print("add_path",add_path)
 # 加载ImageConvert库
 # load ImageConvert library
 # 32bit
 #ImageConvertdll = OleDLL("./dll/x86/ImageConvert.dll")
 # 64bit
-ImageConvertdll = OleDLL("./dll/x64/ImageConvert.dll")
+ImageConvertdll = OleDLL(add_path+"dll/x64/ImageConvert.dll",winmode=0)
 
 #定义枚举类型
 #define enum type

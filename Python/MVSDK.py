@@ -8,7 +8,7 @@ Created on 2017-10-18
 from ctypes import *
 import sys
 import os
-PRT_PH = os.path.dirname(os.path.realpath(sys.argv[0])) # 项目文件主路径
+PRT_PH = os.path.dirname(os.path.realpath(sys.argv[0])) # 项目文件主目录
 print("PRT_PH:",PRT_PH)
 
 #定义枚举类型
@@ -16,7 +16,7 @@ print("PRT_PH:",PRT_PH)
 def enum(**enums):
     return type('Enum', (), enums)
 
-add_path = os.path.split(os.path.abspath(__file__))[0]+'\\'
+add_path = os.path.split(os.path.abspath(__file__))[0]+'\\' # 当前文件所在的目录
 os.add_dll_directory(add_path) #添加dll搜索路径
 print("add_path",add_path)
 
@@ -25,7 +25,7 @@ print("add_path",add_path)
 # 32bit
 #MVSDKdll = OleDLL("./dll/x86/MVSDKmd.dll")
 # 64bit
-MVSDKdll = OleDLL("./dll/x64/MVSDKmd.dll",winmode=0)
+MVSDKdll = OleDLL(add_path+"dll/x64/MVSDKmd.dll",winmode=0)
 
 # MVSDKdll = WinDLL("./dll/x64/MVSDKmd.dll",winmode=0)
 # MVSDKdll = CDLL("./dll/x64/MVSDKmd.dll",winmode=0)

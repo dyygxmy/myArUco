@@ -6,9 +6,9 @@ Created on 2017-10-25
 @author: 
 '''
 
-from ImageConvert import *
-from MVSDK import *
-import struct
+
+from Python.ImageConvert import *
+from Python.MVSDK import *
 import time
 import datetime
 import numpy
@@ -529,33 +529,9 @@ def setROI(camera, OffsetX, OffsetY, nWidth, nHeight):
     OffsetYNode.contents.release(OffsetYNode)
     return 0
 
+# def startCamera():
 
-def demo():
-    # 发现相机
-    # enumerate camera
-    cameraCnt, cameraList = enumCameras()
-    if cameraCnt is None:
-        return -1
-
-    # 显示相机信息
-    # print camera info
-    for index in range(0, cameraCnt):
-        camera = cameraList[index]
-        print("\nCamera Id = " + str(index))
-        print("Key           = " + str(camera.getKey(camera)))
-        print("vendor name   = " + str(camera.getVendorName(camera)))
-        print("Model  name   = " + str(camera.getModelName(camera)))
-        print("Serial number = " + str(camera.getSerialNumber(camera)))
-
-    camera = cameraList[0]
-
-    # 打开相机
-    # open camera
-    nRet = openCamera(camera)
-    if (nRet != 0):
-        print("openCamera fail.")
-        return -1;
-
+def newsStreamSource(camera):
     # 创建流对象
     # create stream source object
     streamSourceInfo = GENICAM_StreamSourceInfo()
@@ -566,7 +542,7 @@ def demo():
     nRet = GENICAM_createStreamSource(pointer(streamSourceInfo), byref(streamSource))
     if (nRet != 0):
         print("create StreamSource fail!")
-        return -1
+        # return -1
 
     # 通用属性设置:设置触发模式为off --根据属性类型，直接构造属性节点。如触发模式是 enumNode，构造enumNode节点
     # create corresponding property node according to the value type of property, here is enumNode
@@ -582,7 +558,7 @@ def demo():
         # 释放相关资源
         # release node resource before return
         streamSource.contents.release(streamSource)
-        return -1
+        # return -1
 
     nRet = trigModeEnumNode.contents.setValueBySymbol(trigModeEnumNode, b"Off")
     if (nRet != 0):
@@ -591,10 +567,10 @@ def demo():
         # release node resource before return
         trigModeEnumNode.contents.release(trigModeEnumNode)
         streamSource.contents.release(streamSource)
-        return -1
+        # return -1
 
     # 需要释放Node资源
-    # release node resource at the end of use  
+    # release node resource at the end of use
     trigModeEnumNode.contents.release(trigModeEnumNode)
 
     # 开始拉流
@@ -606,106 +582,146 @@ def demo():
         # 释放相关资源
         # release stream source object before return
         streamSource.contents.release(streamSource)
-        return -1
+    print("streamSource(0)", streamSource)
+    print("camera(0)", camera)
+    return streamSource
 
-    isGrab = True
+def getImageData_init():
+    # 发现相机
+    # enumerate camera
+    print("point000")
+    cameraCnt, cameraList = enumCameras()
+    print("point[0]",cameraCnt,cameraList)
 
-    while isGrab:
-        # 主动取图
-        # get one frame
-        frame = pointer(GENICAM_Frame())
-        nRet = streamSource.contents.getFrame(streamSource, byref(frame), c_uint(1000))
-        if (nRet != 0):
-            print("getFrame fail! Timeout:[1000]ms")
-            # 释放相关资源
-            # release stream source object before return
-            streamSource.contents.release(streamSource)
-            return -1
-        else:
-            print("getFrame success BlockId = [" + str(frame.contents.getBlockId(frame)) + "], get frame time: " + str(
-                datetime.datetime.now()))
-
-        nRet = frame.contents.valid(frame)
-        if (nRet != 0):
-            print("frame is invalid!")
-            # 释放驱动图像缓存资源
-            # release frame resource before return
-            frame.contents.release(frame)
-            # 释放相关资源
-            # release stream source object before return
-            streamSource.contents.release(streamSource)
-            return -1
-
-            # 给转码所需的参数赋值
-        # fill conversion parameter
-        imageParams = IMGCNV_SOpenParam()
-        imageParams.dataSize = frame.contents.getImageSize(frame)
-        imageParams.height = frame.contents.getImageHeight(frame)
-        imageParams.width = frame.contents.getImageWidth(frame)
-        imageParams.paddingX = frame.contents.getImagePaddingX(frame)
-        imageParams.paddingY = frame.contents.getImagePaddingY(frame)
-        imageParams.pixelForamt = frame.contents.getImagePixelFormat(frame)
-
-        # 将裸数据图像拷出
-        # copy image data out from frame
-        imageBuff = frame.contents.getImage(frame)
-        print("imageBuff", imageBuff)
-        userBuff = c_buffer(b'\0', imageParams.dataSize)
-        memmove(userBuff, c_char_p(imageBuff), imageParams.dataSize)
-
-        # print("imageParams",imageBuff)
-        # cv2.imshow("base",imageParams)
-
-        # 释放驱动图像缓存
-        # release frame resource at the end of use
-        frame.contents.release(frame)
-
-        # 如果图像格式是 Mono8 直接使用
-        # no format conversion required for Mono8
-        if imageParams.pixelForamt == EPixelType.gvspPixelMono8:
-            grayByteArray = bytearray(userBuff)
-            cvImage = numpy.array(grayByteArray).reshape(imageParams.height, imageParams.width)
-        else:
-            # 转码 => BGR24
-            # convert to BGR24
-            rgbSize = c_int()
-            rgbBuff = c_buffer(b'\0', imageParams.height * imageParams.width * 3)
-            print("rgbBuff",rgbBuff)
-            nRet = IMGCNV_ConvertToBGR24(cast(userBuff, c_void_p), \
-                                         byref(imageParams), \
-                                         cast(rgbBuff, c_void_p), \
-                                         byref(rgbSize))
-
-            colorByteArray = bytearray(rgbBuff)
-            cvImage = numpy.array(colorByteArray).reshape(imageParams.height, imageParams.width, 3)
-        # --- end if ---
-
-        # cvImage=cv2.resize(cvImage,(640,480))
-        h1, w1 = cvImage.shape[:2]
-        print("dsize:",w1,h1)
-        p_x = int((w1-900)/2)
-        p_y = int((h1-600)/2)
-        cvImage=cvImage[p_y:p_y+600,p_x:p_x+900]
-        print("cvImage",cvImage)
-        cv2.imshow('myWindow', cvImage)
-        gc.collect()
-
-        if (cv2.waitKey(1) >= 0):
-            isGrab = False
-            break
-    # --- end while ---
-
-    cv2.destroyAllWindows()
-
-    # 停止拉流
-    # stop grabbing
-    nRet = streamSource.contents.stopGrabbing(streamSource)
+    # 显示相机信息
+    # print camera info
+    for index in range(0, cameraCnt):
+        camera = cameraList[index]
+        print("\nCamera Id = " + str(index))
+        print("Key           = " + str(camera.getKey(camera)))
+        print("vendor name   = " + str(camera.getVendorName(camera)))
+        print("Model  name   = " + str(camera.getModelName(camera)))
+        print("Serial number = " + str(camera.getSerialNumber(camera)))
+    camera = cameraList[0]
+    # 打开相机
+    # open camera
+    nRet = openCamera(camera)
     if (nRet != 0):
-        print("stopGrabbing fail!")
-        # 释放相关资源
-        streamSource.contents.release(streamSource)
-        return -1
+        print("openCamera fail.")
+    return camera
 
+def getSourceImages(streamSource):
+    # print("streamSource(1)",streamSource)
+    # 主动取图
+    # get one frame
+    frame = pointer(GENICAM_Frame())
+    # print("point001")
+    nRet = streamSource.contents.getFrame(streamSource, byref(frame), c_uint(1000))
+    # print("point002")
+    if (nRet != 0):
+        print("getFrame fail! Timeout:[1000]ms")
+        # 释放相关资源
+        # release stream source object before return
+        # streamSource.contents.release(streamSource) #测试结果：streamSource不释放可以继续用，如果释放了就需要关掉相机重新打开后再创建新的streamSource
+        return -1,None
+    else:
+        print("getFrame BlockId = [" + str(frame.contents.getBlockId(frame)) + "], time: " + str(
+            datetime.datetime.now()))
+
+
+    nRet = frame.contents.valid(frame)
+    if (nRet != 0):
+        print("frame is invalid!")
+        # 释放驱动图像缓存资源
+        # release frame resource before return
+        frame.contents.release(frame)
+        # 释放相关资源
+        # release stream source object before return
+        streamSource.contents.release(streamSource)
+        # return -1
+
+    # 给转码所需的参数赋值
+    # fill conversion parameter
+    imageParams = IMGCNV_SOpenParam()
+    tents=frame.contents
+    # print("frame+tents:",frame,tents) #<Python.MVSDK.LP_GENICAM_Frame object at 0x00000250309CB3C0> <Python.MVSDK.GENICAM_Frame object at 0x000002502FE575C0>
+    imageParams.height = tents.getImageHeight(frame)
+    imageParams.width = tents.getImageWidth(frame)
+    imageParams.paddingX = tents.getImagePaddingX(frame)
+    imageParams.paddingY = tents.getImagePaddingY(frame)
+    imageParams.pixelForamt = tents.getImagePixelFormat(frame)
+    imageParams.dataSize = tents.getImageSize(frame)
+    # print("imageParams.height",imageParams.height) #2048
+    # print("imageParams.width",imageParams.width) #3072
+    # print("imageParams.paddingX",imageParams.paddingX) #0
+    # print("imageParams.paddingY",imageParams.paddingY)#0
+    # print("imageParams.pixelForamt",imageParams.pixelForamt) #17301505
+    # print("imageParams.dataSize",imageParams.dataSize)#6291456
+
+    # 将裸数据图像拷出
+    # copy image data out from frame
+    imageBuff = frame.contents.getImage(frame)
+    # print("imageBuff", imageBuff)
+    userBuff = c_buffer(b'\0', imageParams.dataSize)
+    memmove(userBuff, c_char_p(imageBuff), imageParams.dataSize)
+
+    # print("imageParams",imageBuff)
+    # cv2.imshow("base",imageParams)
+
+    # 释放驱动图像缓存
+    # release frame resource at the end of use
+    frame.contents.release(frame)
+
+    # 如果图像格式是 Mono8 直接使用
+    # no format conversion required for Mono8
+    if imageParams.pixelForamt == EPixelType.gvspPixelMono8:
+        grayByteArray = bytearray(userBuff)
+        cvImage = numpy.array(grayByteArray).reshape(imageParams.height, imageParams.width)
+    else:
+        # 转码 => BGR24
+        # convert to BGR24
+        rgbSize = c_int()
+        rgbBuff = c_buffer(b'\0', imageParams.height * imageParams.width * 3)
+        print("rgbBuff", rgbBuff)
+        nRet = IMGCNV_ConvertToBGR24(cast(userBuff, c_void_p), \
+                                     byref(imageParams), \
+                                     cast(rgbBuff, c_void_p), \
+                                     byref(rgbSize))
+
+        colorByteArray = bytearray(rgbBuff)
+        cvImage = numpy.array(colorByteArray).reshape(imageParams.height, imageParams.width, 3)
+    # --- end if ---
+
+    cvImage=cv2.cvtColor(cvImage,cv2.COLOR_GRAY2BGR)
+    # 测试相机是3072*2048 ， 缩放25%再裁剪
+    h1, w1 = cvImage.shape[:2]
+    cvImage=cv2.resize(cvImage,(int(w1/4),int(h1/4)))
+    # h1, w1 = cvImage.shape[:2]
+    # # print("dsize:",w1,h1)
+    # p_x = int((w1-900)/2)
+    # p_y = int((h1-600)/2)
+    # cvImage=cvImage[p_y:p_y+600,p_x:p_x+900]
+    # print("cvImage",cvImage)
+    # cv2.imshow('myWindow', cvImage)
+    gc.collect() # 强制垃圾回收
+    return 0,cvImage
+
+
+def clearCache(streamSource,camera,isEnd):
+    # print("streamSource(2)", streamSource)
+    # print("camera(1)", camera)
+    # cv2.destroyAllWindows()
+    print("point003")
+    if isEnd:
+        # 停止拉流
+        # stop grabbing
+        nRet = streamSource.contents.stopGrabbing(streamSource)
+        if (nRet != 0):
+            print("stopGrabbing fail!")
+            # 释放相关资源
+            streamSource.contents.release(streamSource)
+            # return -1
+    print("point004")
     # 关闭相机
     # close camera
     nRet = closeCamera(camera)
@@ -713,19 +729,31 @@ def demo():
         print("closeCamera fail")
         # 释放相关资源
         streamSource.contents.release(streamSource)
-        return -1
+        # return -1
+    print("point005")
+    if isEnd:
+        # 释放相关资源
+        # release stream source object at the end of use
+        streamSource.contents.release(streamSource)
+    print("point006")
 
-    # 释放相关资源
-    # release stream source object at the end of use
-    streamSource.contents.release(streamSource)
 
-    return 0
 
+def demo():
+    camera=getImageData_init()
+    streamSource = newsStreamSource(camera)
+
+    while True:
+        cvImage=getSourceImages(streamSource)
+        cv2.imshow('myWindow', cvImage)
+        if (cv2.waitKey(1000) >= 0):
+            isGrab = False
+            break
+    # --- end while ---
+    clearCache(streamSource, camera,True)
 
 if __name__ == "__main__":
-    nRet = demo()
-    if nRet != 0:
-        print("Some Error happend")
+    demo()
     print("--------- Demo end ---------")
     # 3s exit
-    time.sleep(0.5)
+    time.sleep(3)

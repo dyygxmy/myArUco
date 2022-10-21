@@ -4,21 +4,34 @@
 """
 import cv2
 import os
-
+from GIGETest import getImageData_init,newsStreamSource,getSourceImages,clearCache
 
 def collect_material():
-    cap = cv2.VideoCapture(0)
+    isGIGE = True
+    if isGIGE:
+        camera = getImageData_init()
+        streamSource = newsStreamSource(camera)
+    else:
+        cap = cv2.VideoCapture(0)
     cout=100
     names=os.listdir("masterImg")
     for name in names:
         os.remove("masterImg/"+name)
     while True:
-        ret, frame = cap.read()# 读取摄像头画面
+        if isGIGE:
+            status,frame = getSourceImages(streamSource)
+            if status == -1:
+                continue
+        else:
+            ret, frame = cap.read()# 读取摄像头画面
         cv2.imshow("frame",frame)
         key = cv2.waitKey(1)
         if key == 27:  # 按esc键退出
             print('esc break...')
-            cap.release()
+            if isGIGE:
+                clearCache(streamSource, camera, True)
+            else:
+                cap.release()
             cv2.destroyAllWindows()
             break
 
@@ -27,3 +40,6 @@ def collect_material():
             cout+=1
             filename = "masterImg/master" + str(cout)[1:] + ".jpg"
             cv2.imwrite(filename, frame)
+
+if __name__ == "__main__":
+    collect_material()
