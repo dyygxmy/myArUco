@@ -176,6 +176,6 @@ def save_config(path,key,data):
         yaml.dump(object,file, Dumper=yaml.RoundTripDumper)
         file.close()
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
     # generate_chessboard() # 棋盘生成
-    # calib_camera('masterImg/',(8,6),True) # 棋盘标定
+    calib_camera('masterImg/',(8,6),True) # 棋盘标定

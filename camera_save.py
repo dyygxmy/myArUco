@@ -7,12 +7,14 @@ import os
 from GIGETest import getImageData_init,newsStreamSource,getSourceImages,clearCache
 
 def collect_material():
-    isGIGE = True
+    isGIGE = False
     if isGIGE:
         camera = getImageData_init()
         streamSource = newsStreamSource(camera)
     else:
         cap = cv2.VideoCapture(0)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # 设置图像宽度 max:1280.0
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)  # 设置图像高度 max:720.0
     cout=100
     names=os.listdir("masterImg")
     for name in names:
